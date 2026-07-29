@@ -55,7 +55,10 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
         ax2.axhline(y=pb_20, color='#22c55e', linestyle='--', linewidth=1, label=f'20%分位 ({pb_20:.2f})')
     if pb_80:
         ax2.axhline(y=pb_80, color='#ef4444', linestyle='--', linewidth=1, label=f'80%分位 ({pb_80:.2f})')
-    ax2.scatter(today["date"], today["pb"], color='red', marker='*', s=200, zorder=5, label=f'今日 {today["pb"]:.2f}')
+    if today["pb"] is not None:
+      ax2.scatter(today["date"], today["pb"], color='red', marker='*', s=200, zorder=5, label=f'今日 {today["pb"]:.2f}')
+    else:
+      ax2.scatter(today["date"], 0, color='red', marker='*', s=200, zorder=5, label='今日 PB: N/A')
     ax2.set_ylabel('PB', color='white')
     ax2.tick_params(colors='white')
     ax2.legend(loc='upper left', facecolor='#2d2d44', edgecolor='none', labelcolor='white')

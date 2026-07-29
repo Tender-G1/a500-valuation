@@ -1,0 +1,21 @@
+valuation:
+  buy_pe: 20          # PE分位低于此值视为“便宜”（买入候选）
+  buy_pb: 20          # PB分位低于此值视为“便宜”
+  sell_pe: 80         # PE分位高于此值视为“昂贵”（卖出候选）
+  sell_pb: 80
+  erp_buy: 80         # ERP分位高于此值视为“性价比极高”
+  erp_sell: 20        # ERP分位低于此值视为“性价比极低”
+
+circuit_breaker:
+  pe_change_pct: 10   # PE单日变动超过 ±10% 触发熔断
+  pb_change_pct: 15   # PB单日变动超过 ±15% 触发熔断
+
+rolling_window:
+  min_days: 252       # 近10年窗口中至少需要252个交易日才启用，否则回退至自基日
+
+momentum:
+  lookback_days: 30   # 动量辅助判断的回看天数
+  alert_threshold: 20 # 分位急跌超20个百分点触发“谨慎抄底”提示
+
+chart:
+  show_full_benchmark: true   # 是否在信息栏额外显示“自基日分位”（仅作参考）

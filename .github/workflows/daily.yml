@@ -1,0 +1,33 @@
+name: Daily Valuation Update
+
+on:
+  schedule:
+    - cron: '30 0 * * 1-5'   # 北京时间 08:30 (UTC 0:30)，工作日
+  workflow_dispatch:          # 允许手动触发
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run main script
+        env:
+          PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
+        run: python main.py
+
+      - name: Upload backup artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 30

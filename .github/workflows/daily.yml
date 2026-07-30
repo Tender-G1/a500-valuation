@@ -25,6 +25,7 @@ jobs:
       - name: Run main script
         env:
           PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
+          IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}   # ← 新增
         run: python main.py
 
       - name: Upload backup artifacts on failure

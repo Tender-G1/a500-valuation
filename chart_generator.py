@@ -6,6 +6,18 @@ import matplotlib.dates as mdates
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib as mpl
+
+# ─── 设置中文字体（支持GitHub Actions环境） ─────
+try:
+    # 尝试使用文泉驿字体（已安装）
+    mpl.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
+except:
+    # 若不存在则回退
+    mpl.rcParams['font.sans-serif'] = ['DejaVu Sans']
+mpl.rcParams['axes.unicode_minus'] = False   # 正确显示负号
 
 def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series, 
                       pe_pct: float, pb_pct: float, erp_pct: float,
@@ -102,7 +114,7 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
     
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.12)
-    plt.savefig('chart.png', dpi=150, bbox_inches='tight', facecolor='#1e1e2f')
+    plt.savefig('chart.png', dpi=100, bbox_inches='tight', facecolor='#1e1e2f')
     plt.close()
     return 'chart.png'
 

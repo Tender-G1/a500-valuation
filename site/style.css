@@ -53,15 +53,26 @@ header h1 {
 .btn:hover { background: #2a2a44; color: #fff; }
 .btn.active { background: #3b3b6e; border-color: #6366f1; color: #fff; }
 
-/* L3：图表高度自适应，移除固定高度限制 */
 canvas { 
     width: 100% !important; 
     height: auto !important; 
-    max-height: 70vh;  /* L3：改为视口高度的70% */
+    max-height: 70vh;
     min-height: 350px;
 }
 
-/* ─── 结论区域 ────────────────────────────────────── */
+/* ─── 图表顶部大字结论 ────────────────────────────── */
+.chart-conclusion {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-align: center;
+    background: rgba(150, 150, 150, 0.1);
+    color: #e0e0e0;
+}
+
+/* ─── 每日结论 ────────────────────────────────────── */
 .conclusion { 
     background: #16162a; 
     border-radius: 12px; 
@@ -79,26 +90,7 @@ canvas {
     font-weight: 500;
 }
 
-footer { 
-    text-align: center; 
-    color: #444; 
-    font-size: 0.75em; 
-    padding: 25px 0 10px; 
-    border-top: 1px solid #1e1e2f; 
-    margin-top: 16px; 
-}
-
-/* ─── 移动端优化（≥14px字体） ──────────────────────── */
-@media (max-width: 600px) {
-    body { padding: 12px; }
-    header h1 { font-size: 1.4em; }
-    .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .card { padding: 12px 14px; }
-    /* ============================================================
-   🆕 新增模块样式（持仓/资金/多指数）
-   ============================================================ */
-
-/* ---- 持仓 ---- */
+/* ─── 🆕 新增模块样式（持仓/资金/多指数） ──────────── */
 .portfolio-section { 
     background: #16162a; 
     border-radius: 12px; 
@@ -128,7 +120,6 @@ footer {
 }
 .holding-item:last-child { border-bottom: none; }
 
-/* ---- 资金 ---- */
 .fund-section { 
     background: #16162a; 
     border-radius: 12px; 
@@ -159,7 +150,6 @@ footer {
 }
 .fund-tier:last-child { border-bottom: none; }
 
-/* ---- 多指数 ---- */
 .multi-index-section { 
     background: #16162a; 
     border-radius: 12px; 
@@ -190,7 +180,6 @@ footer {
 }
 .multi-row:last-child { border-bottom: none; }
 
-/* ---- 加载中占位 ---- */
 .loading { 
     padding: 20px; 
     text-align: center; 
@@ -198,20 +187,29 @@ footer {
     font-size: 0.9em; 
 }
 
-/* ---- 图表顶部大字结论 ---- */
-.chart-conclusion {
-    padding: 12px 18px;
-    border-radius: 8px;
-    font-size: 1.2em;
-    font-weight: 600;
-    margin-bottom: 12px;
-    text-align: center;
-    background: rgba(150, 150, 150, 0.1);
-    color: #e0e0e0;
+footer { 
+    text-align: center; 
+    color: #444; 
+    font-size: 0.75em; 
+    padding: 25px 0 10px; 
+    border-top: 1px solid #1e1e2f; 
+    margin-top: 16px; 
 }
 
-/* ---- 移动端适配 ---- */
+/* ─── 移动端优化 ──────────────────────────────────── */
 @media (max-width: 600px) {
+    body { padding: 12px; }
+    header h1 { font-size: 1.4em; }
+    .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card { padding: 12px 14px; }
+    .card-value { font-size: 1.4em; }
+    .conclusion-text { font-size: 0.95em; padding: 8px 12px; }
+    .btn { font-size: 0.75em; padding: 5px 12px; }
+    .chart-container { padding: 12px; }
+    canvas { min-height: 250px; max-height: 55vh; }
+    .badge { font-size: 0.7em; padding: 3px 12px; }
+    .subtitle { font-size: 0.75em; }
+    .chart-conclusion { font-size: 0.95em; padding: 8px 12px; }
     .multi-header, .multi-row {
         grid-template-columns: 1fr 0.7fr 1fr 1.2fr;
         font-size: 0.75em;
@@ -223,27 +221,9 @@ footer {
         gap: 8px;
         padding: 8px 12px;
     }
-    .fund-tier {
-        font-size: 0.8em;
-        gap: 4px;
-    }
-    .holding-item {
-        font-size: 0.8em;
-        gap: 6px;
-    }
-    .chart-conclusion {
-        font-size: 0.95em;
-        padding: 8px 12px;
-    }
+    .fund-tier { font-size: 0.8em; gap: 4px; }
+    .holding-item { font-size: 0.8em; gap: 6px; }
     .portfolio-section, .fund-section, .multi-index-section {
         padding: 14px 16px;
     }
-}
-    .card-value { font-size: 1.4em; }
-    .conclusion-text { font-size: 0.95em; padding: 8px 12px; }
-    .btn { font-size: 0.75em; padding: 5px 12px; }
-    .chart-container { padding: 12px; }
-    canvas { min-height: 250px; max-height: 55vh; }
-    .badge { font-size: 0.7em; padding: 3px 12px; }
-    .subtitle { font-size: 0.75em; }
 }

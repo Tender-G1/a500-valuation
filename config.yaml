@@ -16,6 +16,3 @@ rolling_window:
 momentum:
   lookback_days: 30   # 动量辅助判断的回看天数
   alert_threshold: 20 # 分位急跌超20个百分点触发“谨慎抄底”提示
-
-chart:
-  show_full_benchmark: true   # 是否在信息栏额外显示“自基日分位”（仅作参考）

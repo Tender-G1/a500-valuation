@@ -1,18 +1,100 @@
 valuation:
-  buy_pe: 20          # PE分位低于此值视为“便宜”（买入候选）
-  buy_pb: 20          # PB分位低于此值视为“便宜”
-  sell_pe: 80         # PE分位高于此值视为“昂贵”（卖出候选）
+  buy_pe: 20
+  buy_pb: 20
+  sell_pe: 80
   sell_pb: 80
-  erp_buy: 80         # ERP分位高于此值视为“性价比极高”
-  erp_sell: 20        # ERP分位低于此值视为“性价比极低”
+  erp_buy: 80
+  erp_sell: 20
 
 circuit_breaker:
-  pe_change_pct: 10   # PE单日变动超过 ±10% 触发熔断
-  pb_change_pct: 15   # PB单日变动超过 ±15% 触发熔断
+  pe_change_pct: 10
+  pb_change_pct: 15
 
 rolling_window:
-  min_days: 252       # 近10年窗口中至少需要252个交易日才启用，否则回退至自基日
+  min_days: 252
 
 momentum:
-  lookback_days: 30   # 动量辅助判断的回看天数
-  alert_threshold: 20 # 分位急跌超20个百分点触发“谨慎抄底”提示
+  lookback_days: 30
+  alert_threshold: 20
+
+# ─── N1：资金仓位管理 ──────────────────────────────
+fund:
+  total_pool: 100000  # 总等待买入资金（元）
+  tiers:
+    - name: "货币基金"
+      ratio: 0.50      # 占总资金比例
+      annual_yield: 2.0
+      availability: "T+0"
+    - name: "国债逆回购"
+      ratio: 0.30
+      annual_yield: 2.2
+      availability: "7天"
+    - name: "短债基金"
+      ratio: 0.20
+      annual_yield: 3.0
+      availability: "T+1"
+
+# ─── N2：分批买入/卖出策略 ──────────────────────────
+strategy:
+  buy_steps:
+    - threshold: 20
+      ratio: 0.30
+      label: "第一批"
+    - threshold: 18
+      ratio: 0.30
+      label: "第二批"
+    - threshold: 15
+      ratio: 0.25
+      label: "第三批"
+    - threshold: 12
+      ratio: 0.15
+      label: "第四批"
+  sell_steps:
+    - threshold: 80
+      ratio: 0.25
+      label: "第一批"
+    - threshold: 83
+      ratio: 0.25
+      label: "第二批"
+    - threshold: 86
+      ratio: 0.30
+      label: "第三批"
+    - threshold: 90
+      ratio: 0.20
+      label: "第四批"
+
+# ─── N5：推送拆分 ──────────────────────────────────
+push:
+  schedule:
+    - time: "08:30"
+      type: "valuation"
+      enabled: true
+    - time: "08:33"
+      type: "portfolio"
+      enabled: true
+    - time: "08:36"
+      type: "fund"
+      enabled: true
+  weekly_report:
+    day: 5  # 周五
+    time: "08:40"
+    enabled: true
+
+# ─── N6：多指数扩展 ──────────────────────────────
+multi_index:
+  indices:
+    - code: "000510"
+      name: "中证A500"
+      enabled: true
+    - code: "000300"
+      name: "沪深300"
+      enabled: true
+    - code: "399006"
+      name: "创业板指"
+      enabled: true
+    - code: "000905"
+      name: "中证500"
+      enabled: false
+    - code: "000688"
+      name: "科创50"
+      enabled: false

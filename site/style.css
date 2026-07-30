@@ -94,6 +94,151 @@ footer {
     header h1 { font-size: 1.4em; }
     .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
     .card { padding: 12px 14px; }
+    /* ============================================================
+   🆕 新增模块样式（持仓/资金/多指数）
+   ============================================================ */
+
+/* ---- 持仓 ---- */
+.portfolio-section { 
+    background: #16162a; 
+    border-radius: 12px; 
+    padding: 20px 24px; 
+    border: 1px solid #2a2a44; 
+    margin: 16px 0; 
+}
+.portfolio-section h3 { color: #888; font-size: 0.9em; margin-bottom: 12px; }
+.portfolio-total { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 16px; 
+    padding: 12px 16px; 
+    background: #1a1a2e; 
+    border-radius: 8px; 
+    font-size: 0.95em; 
+    margin-bottom: 12px; 
+}
+.portfolio-total span { white-space: nowrap; }
+.holding-item { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 12px; 
+    padding: 6px 12px; 
+    border-bottom: 1px solid #1e1e2f; 
+    font-size: 0.9em; 
+}
+.holding-item:last-child { border-bottom: none; }
+
+/* ---- 资金 ---- */
+.fund-section { 
+    background: #16162a; 
+    border-radius: 12px; 
+    padding: 20px 24px; 
+    border: 1px solid #2a2a44; 
+    margin: 16px 0; 
+}
+.fund-section h3 { color: #888; font-size: 0.9em; margin-bottom: 12px; }
+.fund-total { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 16px; 
+    padding: 12px 16px; 
+    background: #1a1a2e; 
+    border-radius: 8px; 
+    font-size: 0.95em; 
+    margin-bottom: 12px; 
+}
+.fund-tier { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 10px; 
+    padding: 6px 12px; 
+    border-bottom: 1px solid #1e1e2f; 
+    font-size: 0.9em; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+.fund-tier:last-child { border-bottom: none; }
+
+/* ---- 多指数 ---- */
+.multi-index-section { 
+    background: #16162a; 
+    border-radius: 12px; 
+    padding: 20px 24px; 
+    border: 1px solid #2a2a44; 
+    margin: 16px 0; 
+}
+.multi-index-section h3 { color: #888; font-size: 0.9em; margin-bottom: 12px; }
+.multi-header { 
+    display: grid; 
+    grid-template-columns: 1.2fr 0.8fr 1fr 1.5fr; 
+    gap: 8px; 
+    padding: 8px 12px; 
+    background: #1a1a2e; 
+    border-radius: 6px; 
+    font-size: 0.8em; 
+    color: #666; 
+    font-weight: 600; 
+}
+.multi-row { 
+    display: grid; 
+    grid-template-columns: 1.2fr 0.8fr 1fr 1.5fr; 
+    gap: 8px; 
+    padding: 8px 12px; 
+    border-bottom: 1px solid #1e1e2f; 
+    font-size: 0.9em; 
+    align-items: center; 
+}
+.multi-row:last-child { border-bottom: none; }
+
+/* ---- 加载中占位 ---- */
+.loading { 
+    padding: 20px; 
+    text-align: center; 
+    color: #666; 
+    font-size: 0.9em; 
+}
+
+/* ---- 图表顶部大字结论 ---- */
+.chart-conclusion {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-align: center;
+    background: rgba(150, 150, 150, 0.1);
+    color: #e0e0e0;
+}
+
+/* ---- 移动端适配 ---- */
+@media (max-width: 600px) {
+    .multi-header, .multi-row {
+        grid-template-columns: 1fr 0.7fr 1fr 1.2fr;
+        font-size: 0.75em;
+        gap: 4px;
+        padding: 6px 8px;
+    }
+    .portfolio-total, .fund-total {
+        font-size: 0.8em;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+    .fund-tier {
+        font-size: 0.8em;
+        gap: 4px;
+    }
+    .holding-item {
+        font-size: 0.8em;
+        gap: 6px;
+    }
+    .chart-conclusion {
+        font-size: 0.95em;
+        padding: 8px 12px;
+    }
+    .portfolio-section, .fund-section, .multi-index-section {
+        padding: 14px 16px;
+    }
+}
     .card-value { font-size: 1.4em; }
     .conclusion-text { font-size: 0.95em; padding: 8px 12px; }
     .btn { font-size: 0.75em; padding: 5px 12px; }

@@ -13,3 +13,10 @@ chart_path = draw_triple_chart(
     base_label, config,
     conclusion_text=chart_conclusion  # ← 新增参数
 )
+# ─── 生成网站 ──────────────────────────────────────
+try:
+    from generate_site import generate
+    generate()
+    logger.info("网站文件生成成功")
+except Exception as e:
+    logger.warning(f"网站生成失败（不影响推送）: {e}")

@@ -20,11 +20,6 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
                       base_label: str, config: dict) -> str:
     """
     绘制三子图，保存为 chart.png。
-    base_df: 主基准数据（近10年或全量）
-    today: 当日数据
-    pe_pct, pb_pct, erp_pct: 主基准分位
-    full_pe_pct, full_pb_pct, full_erp_pct: 自基日分位（用于信息栏参考）
-    base_label: 主基准名称（"近10年" 或 "自基日"）
     """
     fig, axes = plt.subplots(3, 1, figsize=(12, 14), sharex=True)
     fig.patch.set_facecolor('#1e1e2f')
@@ -55,14 +50,22 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
     ax1.legend(loc='upper left', facecolor='#2d2d44', edgecolor='none', labelcolor='white')
     ax1.set_title(f'PE走势（基准：{base_label}）', color='white')
 
-    # 子图2: PB
+    # 子图2: PB ── 处理 None ──────────────────────────
     ax2 = axes[1]
     ax2.plot(dates, pb_vals, color='#fbbf24', linewidth=1.5, label='PB')
     if pb_20:
         ax2.axhline(y=pb_20, color='#22c55e', linestyle='--', linewidth=1, label=f'20%分位 ({pb_20:.2f})')
     if pb_80:
         ax2.axhline(y=pb_80, color='#ef4444', linestyle='--', linewidth=1, label=f'80%分位 ({pb_80:.2f})')
-    ax2.scatter(today["date"], today["pb"], color='red', marker='*', s=200, zorder=5, label=f'今日 {today["pb"]:.2f}')
+    # 处理今日PB可能为 None
+    pb_today = today.get("pb")
+    if pb_today is not None and not np.isnan(pb_today):
+        pb_label = f'今日 {pb_today:.2f}'
+        ax2.scatter(today["date"], pb_today, color='red', marker='*', s=200, zorder=5, label=pb_label)
+    else:
+        # 若无PB值，不画点，但添加一个文字说明（可选）
+        ax2.text(0.02, 0.95, '今日PB数据缺失', transform=ax2.transAxes,
+                 color='red', fontsize=10, verticalalignment='top')
     ax2.set_ylabel('PB', color='white')
     ax2.tick_params(colors='white')
     ax2.legend(loc='upper left', facecolor='#2d2d44', edgecolor='none', labelcolor='white')

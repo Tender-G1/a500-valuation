@@ -26,7 +26,7 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
 
     dates = base_df["date"]
     pe_vals = base_df["pe_ttm"]
-    pb_vals = base_df["pb"]
+    pb_vals = base_df["pb"].fillna(0)  # 将 NaN 填充为 0 用于绘图，但实际可能缺失
     erp_vals = [(1/p)*100 - b for p, b in zip(base_df["pe_ttm"], base_df["bond_yield_10y"])]
 
     # 阈值线计算（基于主基准）
@@ -50,25 +50,22 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
     ax1.legend(loc='upper left', facecolor='#2d2d44', edgecolor='none', labelcolor='white')
     ax1.set_title(f'PE走势（基准：{base_label}）', color='white')
 
-    # 子图2: PB ── 处理 None ──────────────────────────
+    # 子图2: PB（防御 None）
     ax2 = axes[1]
-    ax2.plot(dates, pb_vals, color='#fbbf24', linewidth=1.5, label='PB')
-    if pb_20:
-        ax2.axhline(y=pb_20, color='#22c55e', linestyle='--', linewidth=1, label=f'20%分位 ({pb_20:.2f})')
-    if pb_80:
-        ax2.axhline(y=pb_80, color='#ef4444', linestyle='--', linewidth=1, label=f'80%分位 ({pb_80:.2f})')
-    # 处理今日PB可能为 None
-    pb_today = today.get("pb")
-    if pb_today is not None and not np.isnan(pb_today):
-        pb_label = f'今日 {pb_today:.2f}'
-        ax2.scatter(today["date"], pb_today, color='red', marker='*', s=200, zorder=5, label=pb_label)
+    pb_today = today["pb"]
+    if pd.notna(pb_today) and pb_today is not None and pb_today > 0:
+        ax2.plot(dates, pb_vals, color='#fbbf24', linewidth=1.5, label='PB')
+        if pb_20:
+            ax2.axhline(y=pb_20, color='#22c55e', linestyle='--', linewidth=1, label=f'20%分位 ({pb_20:.2f})')
+        if pb_80:
+            ax2.axhline(y=pb_80, color='#ef4444', linestyle='--', linewidth=1, label=f'80%分位 ({pb_80:.2f})')
+        ax2.scatter(today["date"], pb_today, color='red', marker='*', s=200, zorder=5, label=f'今日 {pb_today:.2f}')
+        ax2.set_ylabel('PB', color='white')
+        ax2.legend(loc='upper left', facecolor='#2d2d44', edgecolor='none', labelcolor='white')
     else:
-        # 若无PB值，不画点，但添加一个文字说明（可选）
-        ax2.text(0.02, 0.95, '今日PB数据缺失', transform=ax2.transAxes,
-                 color='red', fontsize=10, verticalalignment='top')
-    ax2.set_ylabel('PB', color='white')
+        ax2.text(0.5, 0.5, 'PB数据暂缺', transform=ax2.transAxes, ha='center', va='center', color='white', fontsize=14)
+        ax2.set_ylabel('PB', color='white')
     ax2.tick_params(colors='white')
-    ax2.legend(loc='upper left', facecolor='#2d2d44', edgecolor='none', labelcolor='white')
     ax2.set_title(f'PB走势（基准：{base_label}）', color='white')
 
     # 子图3: ERP分位

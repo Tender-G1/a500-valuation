@@ -1,33 +1,37 @@
 """
-数据管理模块：负责读取/写入CSV，调用中证官网API获取全量历史及增量更新。
+数据管理：CSV读写 + 中证API全量/增量拉取（含timestamp参数）
 """
 import requests
 import pandas as pd
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Tuple, Optional
+import time
 
 logger = logging.getLogger(__name__)
 
-# 中证指数官网API配置
 CSINDEX_URL = "https://www.csindex.com.cn/csindex-home/perf/indexCsiDsPe"
 HEADERS = {
     "Referer": "https://www.csindex.com.cn",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
     "Accept": "application/json, text/plain, */*",
 }
-INDEX_CODE = "000510"  # 中证A500
+INDEX_CODE = "000510"
+
+# ─── H1：带timestamp的请求函数 ─────────────────────
+def _request_with_timestamp(params: dict) -> dict:
+    """统一请求函数，自动添加 _t 时间戳参数"""
+    params_with_ts = {**params, "_t": int(time.time() * 1000)}
+    resp = requests.get(CSINDEX_URL, params=params_with_ts, headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+    return resp.json()
+
 
 def fetch_full_history() -> pd.DataFrame:
-    """
-    全量拉取自指数基日（2004-12-31）至今的PE/PB数据。
-    若失败则抛出异常。
-    """
+    """全量拉取自2004年至今"""
     logger.info("开始全量拉取历史数据（自2004年）...")
     try:
-        resp = requests.get(CSINDEX_URL, params={"indexCode": INDEX_CODE}, headers=HEADERS, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
+        data = _request_with_timestamp({"indexCode": INDEX_CODE})
         if data.get("code") != "200":
             raise RuntimeError(f"API返回错误: {data.get('msg')}")
         rows = data.get("data", [])
@@ -39,18 +43,17 @@ def fetch_full_history() -> pd.DataFrame:
             if len(date_str) == 8:
                 date = datetime.strptime(date_str, "%Y%m%d").date()
                 pe = row.get("peg")
-                pb = row.get("pb")  # 中证API可能返回pb字段
+                pb = row.get("pb")
                 if pe and float(pe) > 0:
                     records.append({
                         "date": date,
                         "pe_ttm": float(pe),
                         "pb": float(pb) if pb and float(pb) > 0 else None,
-                        "bond_yield_10y": None  # 国债收益率需单独获取，稍后填充
+                        "bond_yield_10y": None
                     })
         df = pd.DataFrame(records)
         if df.empty:
             raise RuntimeError("解析后无有效数据")
-        # 按日期升序
         df = df.sort_values("date").reset_index(drop=True)
         logger.info(f"全量拉取完成，共 {len(df)} 条记录")
         return df
@@ -64,17 +67,12 @@ def fetch_full_history() -> pd.DataFrame:
         logger.error(f"全量拉取失败: {e}")
         raise
 
+
 def fetch_latest_pe_pb() -> Tuple[Optional[dict], bool]:
-    """
-    增量拉取最新一个交易日的数据（仅当有新数据时）。
-    返回 (data_dict, fetched_flag)，其中 data_dict 包含 'date', 'pe_ttm', 'pb'。
-    若拉取失败或已是最新，则返回 (None, False)。
-    """
+    """增量拉取最新交易日数据（带timestamp）"""
     logger.info("尝试增量拉取最新数据...")
     try:
-        resp = requests.get(CSINDEX_URL, params={"indexCode": INDEX_CODE}, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
+        data = _request_with_timestamp({"indexCode": INDEX_CODE})
         if data.get("code") != "200":
             logger.warning(f"API返回非200: {data.get('msg')}")
             return None, False
@@ -104,65 +102,94 @@ def fetch_latest_pe_pb() -> Tuple[Optional[dict], bool]:
         logger.error(f"增量拉取未知异常: {e}")
         return None, False
 
-def fetch_bond_yield() -> Optional[float]:
+
+# ─── H3：国债收益率容灾方案 ──────────────────────────
+def fetch_bond_yield_fallback() -> Optional[float]:
     """
-    获取最新10年期国债收益率（%）。
-    使用 akshare 接口，若失败返回 None。
+    获取10年期国债收益率，含多层容灾：
+    方案A: akshare
+    方案B: 东方财富备用接口
+    方案C: 返回None，由调用方使用上一交易日值
     """
+    # 方案A：akshare（主）
     try:
         import akshare as ak
         df = ak.bond_zh_us_rate()
-        if df.empty:
-            return None
-        # 取最新一行（日期最新）
-        latest = df.iloc[-1]
-        # 列名可能为 '10年期国债收益率' 或类似，尝试获取
-        for col in df.columns:
-            if '10年' in col and '国债' in col:
-                return float(latest[col])
-        # 若未找到，尝试通用
-        for col in ['10年', '10Y']:
-            if col in df.columns:
-                return float(latest[col])
-        return None
+        if not df.empty:
+            latest = df.iloc[-1]
+            for col in df.columns:
+                if '10年' in col and '国债' in col:
+                    return float(latest[col])
+            for col in ['10年', '10Y']:
+                if col in df.columns:
+                    return float(latest[col])
     except Exception as e:
-        logger.error(f"获取国债收益率失败: {e}")
-        return None
+        logger.warning(f"akshare获取国债收益率失败: {e}")
 
+    # 方案B：东方财富备用接口
+    try:
+        url = "https://datacenter-web.eastmoney.com/api/data/get"
+        params = {
+            "type": "RPTA_WEB_TREASURYYIELD",
+            "sty": "ALL",
+            "st": "TRADE_DATE",
+            "sr": "-1",
+            "p": "1",
+            "ps": "1",
+            "token": "894905c73af8cb03c5bd327b33f70cd9"
+        }
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        rows = data.get("result", {}).get("data", [])
+        if rows:
+            latest = rows[0]
+            # 尝试获取10年期
+            for key in ["EMM00566204", "EMM00566205", "EMM00566206"]:
+                if key in latest and latest[key]:
+                    return float(latest[key])
+            # 尝试任意列名包含"10"
+            for k, v in latest.items():
+                if "10" in k and v and isinstance(v, (int, float, str)):
+                    try:
+                        return float(v)
+                    except:
+                        continue
+    except Exception as e:
+        logger.warning(f"东方财富备用接口获取国债收益率失败: {e}")
+
+    # 方案C：返回None，由调用方使用上一交易日值
+    logger.warning("所有国债收益率接口均失败，将使用上一交易日值")
+    return None
+
+
+# ─── 数据加载与写入 ──────────────────────────────────
 def load_or_init_csv(csv_path: str) -> pd.DataFrame:
-    """
-    加载CSV，若不存在则全量拉取并写入，同时补充国债收益率（用最新值填充所有记录）。
-    """
     import os
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path, parse_dates=["date"])
-        logger.info(f"已加载CSV，共 {len(df)} 条记录，最新日期 {df['date'].max()}")
+        logger.info(f"已加载CSV，共 {len(df)} 条记录")
         return df
     else:
         logger.info("CSV不存在，执行全量初始化...")
         df = fetch_full_history()
-        # 获取最新国债收益率
-        bond = fetch_bond_yield()
+        bond = fetch_bond_yield_fallback()
         if bond is not None:
             df["bond_yield_10y"] = bond
         else:
-            df["bond_yield_10y"] = 3.0  # 默认值（保守）
-            logger.warning("未获取到国债收益率，使用默认值3.0%")
-        # 保存
+            # H3：仅首次运行且完全无数据时才使用默认值
+            df["bond_yield_10y"] = 3.0
+            logger.warning("首次运行无历史数据，使用默认值3.0%（建议后续手动更新）")
         df.to_csv(csv_path, index=False)
         logger.info(f"CSV初始化完成，保存至 {csv_path}")
         return df
 
+
 def append_latest_data(df: pd.DataFrame, latest: dict, csv_path: str, bond_yield: float = None) -> pd.DataFrame:
-    """
-    将最新数据追加到DataFrame，若日期已存在则跳过，并更新国债收益率（如有）。
-    返回更新后的DataFrame，并自动保存CSV。
-    """
     new_date = latest["date"]
     if new_date <= df["date"].max():
         logger.info(f"数据已是最新（{new_date}），无需追加")
         return df
-    # 创建新行
     new_row = {
         "date": new_date,
         "pe_ttm": latest["pe_ttm"],

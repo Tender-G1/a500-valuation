@@ -2,8 +2,8 @@ name: Deploy Valuation Website
 
 on:
   schedule:
-    - cron: '30 0 * * 1-5'   # 工作日 08:30 自动运行
-  workflow_dispatch:          # 手动触发
+    - cron: '30 0 * * 1-5'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,20 +31,43 @@ jobs:
       - name: Install Chinese fonts
         run: sudo apt-get update && sudo apt-get install -y fonts-wqy-zenhei
 
-      - name: Run main script (data update + site generation)
+      - name: Run main script
         env:
           PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
           IMGBB_API_KEY: ${{ secrets.IMGBB_API_KEY }}
+          PORTFOLIO_KEY: ${{ secrets.PORTFOLIO_KEY }}
         run: python main.py
 
+      # ─── M2：检查网站生成状态 ──────────────────────
+      - name: Check site generation
+        id: check_site
+        run: |
+          if [ -f site/.site_generated ]; then
+            echo "site_ok=true" >> $GITHUB_OUTPUT
+          else
+            echo "site_ok=false" >> $GITHUB_OUTPUT
+            echo "⚠️ site/.site_generated 不存在，网站可能未成功生成"
+          fi
+
       - name: Setup Pages
+        if: steps.check_site.outputs.site_ok == 'true'
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
+        if: steps.check_site.outputs.site_ok == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
 
       - name: Deploy to GitHub Pages
+        if: steps.check_site.outputs.site_ok == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Upload backup artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}
+          path: backup/
+          retention-days: 30

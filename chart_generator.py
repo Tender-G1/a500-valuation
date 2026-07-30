@@ -140,7 +140,7 @@ def draw_triple_chart(base_df: pd.DataFrame, today: pd.Series,
 
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.18)
-    plt.savefig('chart.png', dpi=100, bbox_inches='tight', facecolor='#1e1e2f')
+    plt.savefig('chart.png', dpi=200, bbox_inches='tight', facecolor='#1e1e2f')
     plt.close()
     return 'chart.png'
 

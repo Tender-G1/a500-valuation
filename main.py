@@ -15,7 +15,7 @@ from pusher import (
     push_valuation_report, push_portfolio_report, push_fund_report,
     push_alert, push_weekly_report, backup_artifacts
 )
-from portfolio_manager import load_portfolio, calc_portfolio_summary, save_portfolio, add_transaction
+from portfolio_manager import load_portfolio, calc_portfolio_summary
 from fund_manager import get_fund_status, suggest_fund_source
 from strategy import get_buy_step, get_sell_step, get_next_buy_info, get_next_sell_info
 from multi_index import scan_all_indices
@@ -103,7 +103,7 @@ def main():
     # 构建结论
     conclusion = build_conclusion(pe_pct, erp_pct, delta, buy_alert, sell_alert, momentum_hint, base_label, data_updated)
 
-    # ─── N2：分批策略 ──────────────────────────────────
+    # N2：分批策略
     buy_step = get_buy_step(pe_pct, config['strategy'])
     sell_step = get_sell_step(pe_pct, config['strategy'])
     next_buy = get_next_buy_info(pe_pct, config['strategy'])
@@ -116,7 +116,7 @@ def main():
     if next_buy['threshold'] is not None and pe_pct > next_buy['threshold']:
         conclusion += f"\n距离下一买入区间还差 {next_buy['gap']:.1f} 个百分点（{next_buy['label']}）"
 
-    # ─── N1：资金管理 ──────────────────────────────────
+    # N1：资金管理
     fund_status = get_fund_status(config['fund'])
     if buy_step:
         total_pool = config['fund']['total_pool']
@@ -129,22 +129,22 @@ def main():
             ])
             conclusion += f"\n\n【资金建议】\n{suggestion_text}"
 
-    # ─── N3：持仓更新 ──────────────────────────────────
+    # N3：持仓加载
     portfolio_key = os.environ.get("PORTFOLIO_KEY")
-    if portfolio_key and buy_step:
+    portfolio_data = {"total_cost": 0, "total_market_value": 0, "total_profit": 0, "total_return": 0, "holdings": []}
+    if portfolio_key:
         df_portfolio = load_portfolio(portfolio_key)
-        # 自动添加买入记录（如触发买入）
-        # 注意：实际使用时需用户确认，这里仅为示例
-        # 实际通过网站界面录入，此处跳过自动添加
+        current_prices = {'000510': today['pe_ttm']}
+        portfolio_data = calc_portfolio_summary(df_portfolio, current_prices)
 
-    # ─── N6：多指数扫描 ──────────────────────────────
+    # N6：多指数扫描
     multi_results = scan_all_indices(config, bond_yield)
     if multi_results:
         conclusion += "\n\n【多指数估值榜】\n"
         for r in multi_results[:5]:
             conclusion += f"{r['status']} {r['name']}: PE分位{r['pe_pct']:.1f}% | {r['advice']}\n"
 
-    # ─── 生成图表 ──────────────────────────────────────
+    # 生成图表
     chart_conclusion = f"📊 中证A500 估值日报（基准：{base_label}）\n当前PE分位：{pe_pct:.1f}%，ERP分位：{erp_pct:.1f}%\n{conclusion.split(chr(10))[2] if len(conclusion.split(chr(10))) > 2 else conclusion}"
     chart_path = draw_triple_chart(
         base_df, today, pe_pct, pb_pct, erp_pct,
@@ -152,30 +152,25 @@ def main():
         base_label, config, chart_conclusion
     )
 
-    # ─── N5：推送拆分 ──────────────────────────────────
-    # 估值速报
+    # ─── N5：推送拆分 ──────────────────────────────────────────
+    # 1. 估值速报（08:30）
     push_valuation_report(pe_pct, pb_pct, erp_pct, delta, base_label, conclusion)
 
-    # 组合日报
-    if portfolio_key:
-        df_portfolio = load_portfolio(portfolio_key)
-        current_prices = {'000510': today['pe_ttm']}  # 可用PE替代价格
-        summary = calc_portfolio_summary(df_portfolio, current_prices)
-        if summary['total_cost'] > 0:
-            push_portfolio_report(summary)
+    # 2. 组合日报（08:33）
+    if portfolio_data and portfolio_data['total_cost'] > 0:
+        push_portfolio_report(portfolio_data)
 
-    # 资金报告
+    # 3. 资金报告（08:36）
     push_fund_report(fund_status)
 
-    # 警报推送（触发时）
+    # 4. 警报推送（触发时）
     if buy_alert:
         push_alert("买入警报", f"PE分位{pe_pct:.1f}%，ERP分位{erp_pct:.1f}%，建议关注买入机会")
     if sell_alert:
         push_alert("卖出警报", f"PE分位{pe_pct:.1f}%，ERP分位{erp_pct:.1f}%，建议注意风险")
 
-    # 周报（周五）
-    if datetime.now().weekday() == 4:  # 周五
-        # 计算本周变化
+    # 5. 周报（周五）
+    if datetime.now().weekday() == 4:
         week_start = datetime.now() - timedelta(days=7)
         week_df = df[df['date'] >= week_start.date()]
         if len(week_df) >= 2:
@@ -188,14 +183,14 @@ def main():
             }
             push_weekly_report(week_summary)
 
-    # ─── 备份 ──────────────────────────────────────────
+    # 备份
     if not push_valuation_report:
         backup_artifacts(chart_path, conclusion)
 
-    # ─── 生成网站（含M4） ──────────────────────────────
+    # 生成网站（含M4）
     try:
         from generate_site import generate
-        generate(chart_path)  # M4：传入图表路径
+        generate(chart_path)
         logger.info("网站文件生成成功")
     except Exception as e:
         logger.warning(f"网站生成失败: {e}")

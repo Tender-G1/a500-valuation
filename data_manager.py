@@ -18,7 +18,7 @@ HEADERS = {
 }
 INDEX_CODE = "000510"
 
-# ─── H1：带timestamp的请求函数 ─────────────────────
+
 def _request_with_timestamp(params: dict) -> dict:
     """统一请求函数，自动添加 _t 时间戳参数"""
     params_with_ts = {**params, "_t": int(time.time() * 1000)}
@@ -69,7 +69,7 @@ def fetch_full_history() -> pd.DataFrame:
 
 
 def fetch_latest_pe_pb() -> Tuple[Optional[dict], bool]:
-    """增量拉取最新交易日数据（带timestamp）"""
+    """增量拉取最新交易日数据"""
     logger.info("尝试增量拉取最新数据...")
     try:
         data = _request_with_timestamp({"indexCode": INDEX_CODE})
@@ -103,7 +103,7 @@ def fetch_latest_pe_pb() -> Tuple[Optional[dict], bool]:
         return None, False
 
 
-# ─── H3：国债收益率容灾方案 ──────────────────────────
+# ─── H3：国债收益率容灾方案（函数名已修正） ──────────────
 def fetch_bond_yield_fallback() -> Optional[float]:
     """
     获取10年期国债收益率，含多层容灾：
@@ -111,7 +111,7 @@ def fetch_bond_yield_fallback() -> Optional[float]:
     方案B: 东方财富备用接口
     方案C: 返回None，由调用方使用上一交易日值
     """
-    # 方案A：akshare（主）
+    # 方案A：akshare
     try:
         import akshare as ak
         df = ak.bond_zh_us_rate()
@@ -144,11 +144,9 @@ def fetch_bond_yield_fallback() -> Optional[float]:
         rows = data.get("result", {}).get("data", [])
         if rows:
             latest = rows[0]
-            # 尝试获取10年期
             for key in ["EMM00566204", "EMM00566205", "EMM00566206"]:
                 if key in latest and latest[key]:
                     return float(latest[key])
-            # 尝试任意列名包含"10"
             for k, v in latest.items():
                 if "10" in k and v and isinstance(v, (int, float, str)):
                     try:
@@ -158,13 +156,13 @@ def fetch_bond_yield_fallback() -> Optional[float]:
     except Exception as e:
         logger.warning(f"东方财富备用接口获取国债收益率失败: {e}")
 
-    # 方案C：返回None，由调用方使用上一交易日值
+    # 方案C：返回None
     logger.warning("所有国债收益率接口均失败，将使用上一交易日值")
     return None
 
 
-# ─── 数据加载与写入 ──────────────────────────────────
 def load_or_init_csv(csv_path: str) -> pd.DataFrame:
+    """加载CSV，不存在则全量初始化"""
     import os
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path, parse_dates=["date"])
@@ -177,15 +175,15 @@ def load_or_init_csv(csv_path: str) -> pd.DataFrame:
         if bond is not None:
             df["bond_yield_10y"] = bond
         else:
-            # H3：仅首次运行且完全无数据时才使用默认值
             df["bond_yield_10y"] = 3.0
-            logger.warning("首次运行无历史数据，使用默认值3.0%（建议后续手动更新）")
+            logger.warning("首次运行无历史数据，使用默认值3.0%")
         df.to_csv(csv_path, index=False)
         logger.info(f"CSV初始化完成，保存至 {csv_path}")
         return df
 
 
 def append_latest_data(df: pd.DataFrame, latest: dict, csv_path: str, bond_yield: float = None) -> pd.DataFrame:
+    """追加最新数据并保存"""
     new_date = latest["date"]
     if new_date <= df["date"].max():
         logger.info(f"数据已是最新（{new_date}），无需追加")

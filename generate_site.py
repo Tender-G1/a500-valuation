@@ -148,6 +148,14 @@ def generate(chart_path: str = "chart.png"):
     # 读取数据（后续代码同之前，略...）
     # 此处为完整实现，因长度限制省略重复代码
     # 实际使用请参考第一批次的 generate_site.py
+// 🆕 持仓数据（从加密文件解密后传入）
+const portfolioData = {{ portfolio_data_json }};
+
+// 🆕 资金管理数据
+const fundData = {{ fund_data_json }};
+
+// 🆕 多指数数据
+const multiIndexData = {{ multi_index_json }};
 
     # 写入 .site_generated 标记（M2）
     with open(f"{SITE_DIR}/.site_generated", "w") as f:

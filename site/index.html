@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中证A500 估值监控</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ===== 头部 ===== -->
+        <header>
+            <h1>📊 中证A500 估值监控看板</h1>
+            <p class="subtitle">数据更新于: <span id="updateTime">加载中...</span></p>
+            <div class="badges">
+                <span class="badge" id="baseLabel">基准: 近10年</span>
+                <span class="badge" id="dataPoints">数据点: -- 条</span>
+            </div>
+        </header>
+
+        <!-- ===== 指标卡片 ===== -->
+        <section class="cards">
+            <div class="card pe">
+                <div class="card-label">PE 分位</div>
+                <div class="card-value" id="peValue">--%</div>
+                <div class="card-change" id="peDelta">--</div>
+                <div class="card-sub">自基日: <span id="fullPeValue">--%</span></div>
+            </div>
+            <div class="card pb">
+                <div class="card-label">PB 分位</div>
+                <div class="card-value" id="pbValue">--%</div>
+                <div class="card-sub">自基日: <span id="fullPbValue">--%</span></div>
+            </div>
+            <div class="card erp">
+                <div class="card-label">ERP 分位</div>
+                <div class="card-value" id="erpValue">--%</div>
+                <div class="card-sub">性价比: <span id="erpLabel">--</span></div>
+            </div>
+            <div class="card status">
+                <div class="card-label">综合状态</div>
+                <div class="card-value" id="statusValue">--</div>
+                <div class="card-sub" id="statusSub">--</div>
+            </div>
+        </section>
+
+        <!-- ===== 图表区域 ===== -->
+        <section class="chart-container">
+            <div class="chart-toolbar">
+                <button class="btn active" data-window="1y">近1年</button>
+                <button class="btn" data-window="3y">近3年</button>
+                <button class="btn" data-window="5y">近5年</button>
+                <button class="btn" data-window="all">全部</button>
+            </div>
+            <!-- 大字结论（图表顶部） -->
+            <div id="chartConclusion" class="chart-conclusion">加载中...</div>
+            <canvas id="valuationChart" height="400"></canvas>
+            <!-- 查看推送图 -->
+            <div style="text-align:right;margin-top:10px;">
+                <a href="chart.png" target="_blank" style="color:#60a5fa;font-size:0.85em;">📷 查看今日推送图</a>
+            </div>
+        </section>
+
+        <!-- ===== 每日结论 ===== -->
+        <section class="conclusion">
+            <h3>📝 今日结论</h3>
+            <div class="conclusion-text" id="conclusionText">加载中...</div>
+        </section>
+
+        <!-- ===== 🆕 持仓追踪 ===== -->
+        <section class="portfolio-section">
+            <h3>💰 持仓追踪</h3>
+            <div id="portfolioSummary">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+        <!-- ===== 🆕 资金管理 ===== -->
+        <section class="fund-section">
+            <h3>💵 资金管理</h3>
+            <div id="fundStatus">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+        <!-- ===== 🆕 多指数估值榜 ===== -->
+        <section class="multi-index-section">
+            <h3>📊 多指数估值榜</h3>
+            <div id="multiIndexRank">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+        <!-- ===== 页脚 ===== -->
+        <footer>
+            <p>数据来源：中证指数官网 · 系统自动更新于每个工作日 08:30</p>
+            <p style="font-size:0.7em;color:#333;">持仓数据加密存储，仅您本人可见</p>
+        </footer>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

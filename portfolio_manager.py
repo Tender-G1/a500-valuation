@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 logger = logging.getLogger(__name__)
 
-PORTFOLIO_FILE = "portfolio.enc"  # 加密后的持仓文件
+PORTFOLIO_FILE = "/tmp/portfolio.enc"  # 加密后的持仓文件（Vercel临时路径）
 PORTFOLIO_CSV = "portfolio.csv"   # 临时明文（仅内存操作）
 
 

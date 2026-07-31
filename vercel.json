@@ -3,5 +3,11 @@
     "api/index.py": {
       "maxDuration": 10
     }
-  }
+  },
+  "buildCommand": "pip install -r requirements.txt && python generate_site.py",
+  "outputDirectory": "site",
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/site/$1" }
+  ]
 }

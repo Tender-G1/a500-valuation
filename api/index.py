@@ -264,6 +264,10 @@ def get_portfolio_summary():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/")
+def root():
+    return jsonify({"status": "ok", "message": "API is running"})
+
 
 @app.route("/api/health", methods=["GET"])
 def health():

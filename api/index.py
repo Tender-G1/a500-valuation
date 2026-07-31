@@ -276,7 +276,4 @@ def health():
 
 
 # ─── Vercel 入口 ─────────────────────────────────────
-
-def handler(event, context):
-    """Vercel Serverless 入口"""
-    return app(event, context)
+# Vercel 会自动使用 app 实例，无需 handler

@@ -12,6 +12,9 @@
     }
   ],
   "env": {
-    "PORTFOLIO_KEY": "@portfolio_key"
+    "PORTFOLIO_KEY": "@portfolio_key",
+    "GITHUB_TOKEN": "@github_token",
+    "REPO_OWNER": "@repo_owner",
+    "REPO_NAME": "@repo_name"
   }
 }

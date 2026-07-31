@@ -1,8 +1,7 @@
 {
   "functions": {
     "api/index.py": {
-      "runtime": "python3.9",
-      "maxDuration": 10
+      "runtime": "python3.9"
     }
   },
   "routes": [
@@ -10,11 +9,5 @@
       "src": "/api/(.*)",
       "dest": "/api/index.py"
     }
-  ],
-  "env": {
-    "PORTFOLIO_KEY": "@portfolio_key",
-    "GITHUB_TOKEN": "@github_token",
-    "REPO_OWNER": "@repo_owner",
-    "REPO_NAME": "@repo_name"
-  }
+  ]
 }

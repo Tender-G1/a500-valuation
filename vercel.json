@@ -4,10 +4,24 @@
       "maxDuration": 10
     }
   },
-  "buildCommand": "pip install -r requirements.txt && python generate_site.py",
-  "outputDirectory": "site",
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "site/**",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "src": "/(.*)", "dest": "/site/$1" }
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/site/$1"
+    }
   ]
 }

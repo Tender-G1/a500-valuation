@@ -4,7 +4,11 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
+  "routes": [
+    { "src": "/api/health", "dest": "/api/index" },
+    { "src": "/api/transaction", "dest": "/api/index" },
+    { "src": "/api/portfolio", "dest": "/api/index" },
+    { "src": "/api/portfolio_summary", "dest": "/api/index" },
+    { "src": "/(.*)", "dest": "/api/index" }
   ]
 }

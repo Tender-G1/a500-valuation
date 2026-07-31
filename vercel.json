@@ -11,6 +11,6 @@
     }
   ],
   "env": {
-    "PORTFOLIO_KEY": "@portfolio_key"  // 将在 Vercel 项目中绑定 Secret
+    "PORTFOLIO_KEY": "@portfolio_key"
   }
 }

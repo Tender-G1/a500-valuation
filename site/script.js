@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             resultSpan.textContent = '⏳ 保存中...';
             try {
-                const resp = await fetch('/api/transaction', {
+                const resp = await fetch(API_BASE + '/api/transaction', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)

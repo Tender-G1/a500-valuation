@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    }
+  ],
+  "env": {
+    "PORTFOLIO_KEY": "@portfolio_key"  // 将在 Vercel 项目中绑定 Secret
+  }
+}

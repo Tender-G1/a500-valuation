@@ -16,36 +16,35 @@
             <p class="subtitle">数据更新于: <span id="updateTime">加载中...</span></p>
             <div class="badges">
                 <span class="badge" id="baseLabel">基准: 近10年</span>
-                <span class="badge" id="dataPoints">数据点: -- 条</span>
+                <span class="badge" id="dataPoints">数据点: --</span>
             </div>
         </header>
 
         <!-- ===== 指标卡片 ===== -->
         <section class="cards">
             <div class="card pe">
-                <div class="card-label">PE 分位</div>
+                <div class="card-label">📈 PE 分位</div>
                 <div class="card-value" id="peValue">--%</div>
-                <div class="card-change" id="peDelta">--</div>
-                <div class="card-sub">自基日: <span id="fullPeValue">--%</span></div>
-            </div>
-            <div class="card pb">
-                <div class="card-label">PB 分位</div>
-                <div class="card-value" id="pbValue">--%</div>
-                <div class="card-sub">自基日: <span id="fullPbValue">--%</span></div>
+                <div class="card-sub" id="peDelta">较昨日 --</div>
             </div>
             <div class="card erp">
-                <div class="card-label">ERP 分位</div>
+                <div class="card-label">📊 ERP 分位</div>
                 <div class="card-value" id="erpValue">--%</div>
-                <div class="card-sub">性价比: <span id="erpLabel">--</span></div>
+                <div class="card-sub" id="erpLabel">性价比 --</div>
             </div>
             <div class="card status">
-                <div class="card-label">综合状态</div>
+                <div class="card-label">🎯 综合状态</div>
                 <div class="card-value" id="statusValue">--</div>
                 <div class="card-sub" id="statusSub">--</div>
             </div>
+            <div class="card strategy">
+                <div class="card-label">📋 策略提示</div>
+                <div class="card-value" id="strategyValue" style="font-size:1.0em;">--</div>
+                <div class="card-sub" id="strategySub">下一区间差 --</div>
+            </div>
         </section>
 
-        <!-- ===== 图表区域 ===== -->
+        <!-- ===== 图表 ===== -->
         <section class="chart-container">
             <div class="chart-toolbar">
                 <button class="btn active" data-window="1y">近1年</button>
@@ -53,49 +52,69 @@
                 <button class="btn" data-window="5y">近5年</button>
                 <button class="btn" data-window="all">全部</button>
             </div>
-            <!-- 大字结论（图表顶部） -->
             <div id="chartConclusion" class="chart-conclusion">加载中...</div>
             <canvas id="valuationChart" height="400"></canvas>
-            <!-- 查看推送图 -->
-            <div style="text-align:right;margin-top:10px;">
-                <a href="chart.png" target="_blank" style="color:#60a5fa;font-size:0.85em;">📷 查看今日推送图</a>
-            </div>
         </section>
 
-        <!-- ===== 每日结论 ===== -->
-        <section class="conclusion">
-            <h3>📝 今日结论</h3>
-            <div class="conclusion-text" id="conclusionText">加载中...</div>
-        </section>
-
-        <!-- ===== 🆕 持仓追踪 ===== -->
-        <section class="portfolio-section">
-            <h3>💰 持仓追踪</h3>
-            <div id="portfolioSummary">
+        <!-- ===== 多指数估值榜 ===== -->
+        <section class="multi-section">
+            <h3>📊 多指数估值榜</h3>
+            <div id="multiIndexRank" class="multi-grid">
                 <div class="loading">加载中...</div>
             </div>
         </section>
 
-        <!-- ===== 🆕 资金管理 ===== -->
+        <!-- ===== 资金管理 ===== -->
         <section class="fund-section">
             <h3>💵 资金管理</h3>
-            <div id="fundStatus">
+            <div id="fundStatus" class="fund-grid">
                 <div class="loading">加载中...</div>
             </div>
         </section>
 
-        <!-- ===== 🆕 多指数估值榜 ===== -->
-        <section class="multi-index-section">
-            <h3>📊 多指数估值榜</h3>
-            <div id="multiIndexRank">
+        <!-- ===== 持仓追踪 ===== -->
+        <section class="portfolio-section">
+            <h3>💰 持仓追踪</h3>
+            <div id="portfolioSummary" class="portfolio-grid">
                 <div class="loading">加载中...</div>
             </div>
+            <!-- 持仓录入表单 -->
+            <details class="add-transaction">
+                <summary>➕ 录入交易记录</summary>
+                <form id="transactionForm">
+                    <div class="form-row">
+                        <label>指数</label>
+                        <select id="txnIndex" required>
+                            <option value="000510">中证A500</option>
+                            <option value="000300">沪深300</option>
+                            <option value="399006">创业板指</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>操作</label>
+                        <select id="txnAction" required>
+                            <option value="buy">买入</option>
+                            <option value="sell">卖出</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label>金额 (元)</label>
+                        <input type="number" id="txnAmount" placeholder="10000" required>
+                    </div>
+                    <div class="form-row">
+                        <label>成交价格 (可选)</label>
+                        <input type="number" id="txnPrice" placeholder="如 15.2" step="0.01">
+                    </div>
+                    <button type="submit" class="btn-primary">保存记录</button>
+                    <span id="txnResult" class="txn-result"></span>
+                </form>
+            </details>
         </section>
 
         <!-- ===== 页脚 ===== -->
         <footer>
             <p>数据来源：中证指数官网 · 系统自动更新于每个工作日 08:30</p>
-            <p style="font-size:0.7em;color:#333;">持仓数据加密存储，仅您本人可见</p>
+            <p style="font-size:0.7em;color:#444;">⚠️ 持仓数据已加密存储，仅您本人可见</p>
         </footer>
     </div>
 

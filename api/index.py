@@ -14,15 +14,19 @@ import requests
 app = Flask(__name__)
 CORS(app)
 
-# ─── 环境变量 ──────────────────────────────────────────
-PORTFOLIO_KEY = os.environ.get("PORTFOLIO_KEY")
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-REPO_OWNER = os.environ.get("REPO_OWNER")
-REPO_NAME = os.environ.get("REPO_NAME")
-GITHUB_API_URL = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/portfolio.enc"
+# ─── 环境变量（带默认值，防止 Vercel 启动报错） ─────────────
+PORTFOLIO_KEY = os.environ.get("PORTFOLIO_KEY", "")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+REPO_OWNER = os.environ.get("REPO_OWNER", "Tender-Gi")
+REPO_NAME = os.environ.get("REPO_NAME", "a500-valuation")
 
 if not PORTFOLIO_KEY:
-    raise RuntimeError("PORTFOLIO_KEY environment variable not set")
+    print("警告：PORTFOLIO_KEY 未设置，持仓功能将不可用")
+
+if not GITHUB_TOKEN:
+    print("警告：GITHUB_TOKEN 未设置，无法读写 GitHub")
+
+GITHUB_API_URL = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/portfolio.enc"
 
 
 # ─── 加密/解密工具（与 portfolio_manager.py 保持一致） ──
@@ -59,7 +63,6 @@ def decrypt_data(encrypted: bytes, password: str) -> str:
 # ─── GitHub API 读写 ──────────────────────────────────
 
 def read_from_github() -> bytes:
-    """从 GitHub 仓库读取 portfolio.enc 文件内容"""
     if not GITHUB_TOKEN:
         return b''
     headers = {
@@ -74,7 +77,6 @@ def read_from_github() -> bytes:
         elif resp.status_code == 404:
             return b''
         else:
-            app.logger.error(f"GitHub读取失败: {resp.status_code}")
             return b''
     except Exception as e:
         app.logger.error(f"GitHub读取异常: {e}")
@@ -82,7 +84,6 @@ def read_from_github() -> bytes:
 
 
 def write_to_github(content: bytes, commit_message: str = "Update portfolio") -> bool:
-    """写入 portfolio.enc 到 GitHub 仓库"""
     if not GITHUB_TOKEN:
         app.logger.error("GITHUB_TOKEN 未设置")
         return False
@@ -90,7 +91,6 @@ def write_to_github(content: bytes, commit_message: str = "Update portfolio") ->
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
-    # 先获取当前文件的 SHA（用于更新）
     try:
         resp = requests.get(GITHUB_API_URL, headers=headers, timeout=10)
         sha = resp.json().get("sha") if resp.status_code == 200 else None
@@ -108,7 +108,6 @@ def write_to_github(content: bytes, commit_message: str = "Update portfolio") ->
     try:
         resp = requests.put(GITHUB_API_URL, headers=headers, json=payload, timeout=15)
         if resp.status_code in [200, 201]:
-            app.logger.info("GitHub写入成功")
             return True
         else:
             app.logger.error(f"GitHub写入失败: {resp.status_code} - {resp.text}")
@@ -121,7 +120,8 @@ def write_to_github(content: bytes, commit_message: str = "Update portfolio") ->
 # ─── 持仓数据操作 ─────────────────────────────────────
 
 def load_portfolio() -> pd.DataFrame:
-    """加载持仓数据（从GitHub解密）"""
+    if not PORTFOLIO_KEY:
+        return pd.DataFrame(columns=['date', 'index_code', 'index_name', 'action', 'amount', 'price', 'shares'])
     encrypted = read_from_github()
     if not encrypted:
         return pd.DataFrame(columns=['date', 'index_code', 'index_name', 'action', 'amount', 'price', 'shares'])
@@ -137,7 +137,8 @@ def load_portfolio() -> pd.DataFrame:
 
 
 def save_portfolio(df: pd.DataFrame) -> bool:
-    """保存持仓数据（加密后写入GitHub）"""
+    if not PORTFOLIO_KEY:
+        return False
     if df.empty:
         encrypted = encrypt_data("[]", PORTFOLIO_KEY)
     else:
@@ -148,7 +149,6 @@ def save_portfolio(df: pd.DataFrame) -> bool:
 
 def add_transaction(df: pd.DataFrame, index_code: str, index_name: str,
                     action: str, amount: float, price: float = None) -> pd.DataFrame:
-    """添加交易记录"""
     shares = amount / price if price and price > 0 else 0
     new_row = {
         'date': date.today().isoformat(),
@@ -163,7 +163,6 @@ def add_transaction(df: pd.DataFrame, index_code: str, index_name: str,
 
 
 def calc_portfolio_summary(df: pd.DataFrame, current_prices: dict) -> dict:
-    """计算持仓汇总"""
     if df.empty:
         return {
             'total_cost': 0,
@@ -209,9 +208,18 @@ def calc_portfolio_summary(df: pd.DataFrame, current_prices: dict) -> dict:
 
 # ─── Flask 路由 ──────────────────────────────────────
 
+@app.route("/")
+def root():
+    return jsonify({"status": "ok", "message": "API is running"})
+
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"})
+
 @app.route("/api/transaction", methods=["POST"])
 def add_transaction_api():
-    """录入交易记录"""
+    if not PORTFOLIO_KEY:
+        return jsonify({"success": False, "error": "PORTFOLIO_KEY not configured"}), 500
     try:
         data = request.get_json()
         if not data:
@@ -243,7 +251,8 @@ def add_transaction_api():
 
 @app.route("/api/portfolio", methods=["GET"])
 def get_portfolio():
-    """获取持仓数据（加密传输）"""
+    if not PORTFOLIO_KEY:
+        return jsonify({"success": False, "error": "PORTFOLIO_KEY not configured"}), 500
     try:
         df = load_portfolio()
         records = df.to_dict(orient="records")
@@ -254,7 +263,8 @@ def get_portfolio():
 
 @app.route("/api/portfolio_summary", methods=["POST"])
 def get_portfolio_summary():
-    """计算持仓汇总（需要传入当前价格）"""
+    if not PORTFOLIO_KEY:
+        return jsonify({"success": False, "error": "PORTFOLIO_KEY not configured"}), 500
     try:
         data = request.get_json()
         current_prices = data.get("current_prices", {}) if data else {}
@@ -264,16 +274,8 @@ def get_portfolio_summary():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route("/")
-def root():
-    return jsonify({"status": "ok", "message": "API is running"})
-
-
-@app.route("/api/health", methods=["GET"])
-def health():
-    """健康检查"""
-    return jsonify({"status": "ok"})
-
 
 # ─── Vercel 入口 ─────────────────────────────────────
-# Vercel 会自动使用 app 实例，无需 handler
+# Vercel 会自动识别 app 实例，无需 handler
+if __name__ == "__main__":
+    app.run()
